@@ -1,8 +1,10 @@
+import { TdShield } from './Icons.jsx';
+
 export default function RolePicker() {
   return (
     <div className="picker-page">
       <div className="picker-brand">
-        <span className="logo-square">TD</span> Sidekick
+        <TdShield size={44} /> <span>Sidekick</span>
       </div>
       <p className="picker-sub">Anti-scam banking demo — open each role in its own window.</p>
       <div className="picker-buttons">
@@ -17,6 +19,9 @@ export default function RolePicker() {
           <span className="picker-desc">Desktop bank login with stolen credentials</span>
         </a>
       </div>
+      <p className="picker-tip">
+        Tip: on iPad, open these side by side in Split View — the windows sync in real time.
+      </p>
     </div>
   );
 }

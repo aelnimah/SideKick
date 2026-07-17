@@ -2,16 +2,21 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { send, subscribe } from './sync.js';
 import RiskMeter from './RiskMeter.jsx';
 import { loadFaceApi, detectFaces } from './faceDetect.js';
+import {
+  TdShield, StatusGlyphs, BellIcon, FaceIdIcon,
+  HomeIcon, AccountsIcon, MoveMoneyIcon, InsightsIcon, MoreIcon,
+  SendIcon, BillIcon, DepositIcon,
+} from './Icons.jsx';
 
 const BASELINE = 10;
 const clamp = (n) => Math.max(0, Math.min(100, n));
 
 const TRANSACTIONS = [
-  { id: 1, name: 'Metro Grocery', date: 'Jul 16', amount: -64.12, icon: '🛒' },
-  { id: 2, name: 'Payroll — Cedar Ridge Dental', date: 'Jul 15', amount: 2140.0, icon: '💼' },
-  { id: 3, name: 'Hydro One', date: 'Jul 14', amount: -128.4, icon: '⚡' },
-  { id: 4, name: 'Tim Hortons', date: 'Jul 14', amount: -8.65, icon: '☕' },
-  { id: 5, name: 'E-transfer from Sam', date: 'Jul 12', amount: 45.0, icon: '📥' },
+  { id: 1, name: 'Metro Grocery', date: 'Jul 16', amount: -64.12 },
+  { id: 2, name: 'Payroll — Cedar Ridge Dental', date: 'Jul 15', amount: 2140.0 },
+  { id: 3, name: 'Hydro One', date: 'Jul 14', amount: -128.4 },
+  { id: 4, name: 'Tim Hortons', date: 'Jul 14', amount: -8.65 },
+  { id: 5, name: 'E-transfer from Sam', date: 'Jul 12', amount: 45.0 },
 ];
 
 const LOCKDOWN_LINES = [
@@ -23,6 +28,40 @@ const LOCKDOWN_LINES = [
 
 const money = (n) =>
   `${n < 0 ? '−' : '+'}$${Math.abs(n).toLocaleString('en-CA', { minimumFractionDigits: 2 })}`;
+
+// Scale the 390x844 frame down so it always fits (iPad Split View, laptops).
+function useFitScale() {
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const compute = () =>
+      setScale(Math.min(1, (window.innerHeight - 16) / 872, (window.innerWidth - 12) / 418));
+    compute();
+    window.addEventListener('resize', compute);
+    return () => window.removeEventListener('resize', compute);
+  }, []);
+  return scale;
+}
+
+function useClock() {
+  const fmt = () =>
+    new Date().toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: false });
+  const [time, setTime] = useState(fmt);
+  useEffect(() => {
+    const t = setInterval(() => setTime(fmt()), 15000);
+    return () => clearInterval(t);
+  }, []);
+  return time;
+}
+
+function StatusBar({ dark }) {
+  const time = useClock();
+  return (
+    <div className={`status-bar ${dark ? 'dark' : ''}`}>
+      <span className="status-time">{time}</span>
+      <StatusGlyphs />
+    </div>
+  );
+}
 
 export default function Phone() {
   // ---- core state ----
@@ -43,12 +82,14 @@ export default function Phone() {
 
   // BlindSpot camera
   const [camOn, setCamOn] = useState(false);
-  const [faceCount, setFaceCount] = useState(null); // null = not running/failed
+  const [camLive, setCamLive] = useState(false);
+  const [faceCount, setFaceCount] = useState(null); // null = detector not reporting
   const videoRef = useRef(null);
 
   const exposedRef = useRef(false);
   const exposureSourceRef = useRef(null);
   const lockdownActive = lockStep >= 0;
+  const scale = useFitScale();
 
   // ---- exposure (shared by hotkey "E" and BlindSpot camera) ----
   const setExposure = useCallback((on, source = 'hotkey') => {
@@ -102,7 +143,6 @@ export default function Phone() {
     [],
   );
 
-  // broadcast risk updates so any window could mirror the meter
   useEffect(() => {
     send('risk_update', { score: risk });
   }, [risk]);
@@ -130,7 +170,7 @@ export default function Phone() {
     setTimeout(() => setScreen('home'), 1500);
   };
 
-  // ---- demo panel (triple-click the logo) ----
+  // ---- demo panel (triple-click/tap the shield logo) ----
   const clickTimes = useRef([]);
   const onLogoClick = () => {
     const now = Date.now();
@@ -178,53 +218,68 @@ export default function Phone() {
     }, 2000);
   };
 
-  // ---- BlindSpot camera (step 5, best-effort) ----
+  // ---- BlindSpot camera: preview opens first; detection is best-effort on top ----
   useEffect(() => {
     if (!camOn) {
       setFaceCount(null);
+      setCamLive(false);
       return undefined;
     }
     let stream = null;
     let timer = null;
     let stopped = false;
     let busy = false;
+    let detectReady = false;
     let onesInARow = 0;
     (async () => {
       try {
-        await loadFaceApi();
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-        if (stopped) return;
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 640 } },
+          audio: false,
+        });
+        if (stopped) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
         const video = videoRef.current;
         video.srcObject = stream;
-        await video.play();
-        timer = setInterval(async () => {
-          if (busy || stopped) return;
-          busy = true;
-          try {
-            const count = await detectFaces(videoRef.current);
-            if (count == null || stopped) return;
-            setFaceCount(count);
-            if (count >= 2) {
-              onesInARow = 0;
-              if (!exposedRef.current) setExposure(true, 'camera');
-            } else {
-              onesInARow += 1;
-              if (
-                onesInARow >= 3 &&
-                exposedRef.current &&
-                exposureSourceRef.current === 'camera'
-              ) {
-                setExposure(false);
-              }
-            }
-          } finally {
-            busy = false;
-          }
-        }, 500);
+        await video.play().catch(() => {});
+        setCamLive(true);
       } catch {
-        // camera or model unavailable — fail silently, hotkey still works
-        if (!stopped) setFaceCount(null);
+        // camera denied or unavailable — silently switch back off
+        if (!stopped) setCamOn(false);
+        return;
       }
+      // models load in the background; the preview never waits on them
+      loadFaceApi()
+        .then(() => { detectReady = true; })
+        .catch(() => {});
+      timer = setInterval(async () => {
+        if (!detectReady || busy || stopped) return;
+        busy = true;
+        try {
+          const count = await detectFaces(videoRef.current);
+          if (count == null || stopped) return;
+          setFaceCount(count);
+          if (count >= 2) {
+            onesInARow = 0;
+            if (!exposedRef.current) setExposure(true, 'camera');
+          } else {
+            onesInARow += 1;
+            if (
+              onesInARow >= 3 &&
+              exposedRef.current &&
+              exposureSourceRef.current === 'camera'
+            ) {
+              setExposure(false);
+            }
+          }
+        } catch {
+          /* one bad frame never kills the loop */
+        } finally {
+          busy = false;
+        }
+      }, 500);
     })();
     return () => {
       stopped = true;
@@ -241,13 +296,17 @@ export default function Phone() {
   // ---- render ----
   return (
     <div className="phone-stage">
-      <div className="phone-frame">
+      <div className="phone-frame" style={{ transform: `scale(${scale})` }}>
         <div className="phone-screen">
           <div className="phone-notch" />
 
           {/* iOS-style scam SMS banner */}
           <div className={`sms-banner ${smsVisible ? 'show' : ''}`} onClick={openPhish}>
-            <div className="sms-app-icon">💬</div>
+            <div className="sms-app-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
+                <path d="M12 3C6.5 3 2 6.8 2 11.4c0 2.6 1.4 4.9 3.6 6.4-.2 1-.8 2.4-1.6 3.2 1.7-.2 3.5-1 4.6-1.8 1.1.3 2.2.5 3.4.5 5.5 0 10-3.7 10-8.3S17.5 3 12 3Z" />
+              </svg>
+            </div>
             <div className="sms-body">
               <div className="sms-top">
                 <span className="sms-from">TD Alert</span>
@@ -266,23 +325,29 @@ export default function Phone() {
 
           {screen === 'login' && (
             <div className="screen login-screen">
-              <div className="login-logo" onClick={onLogoClick}>
-                <span className="logo-square big">TD</span>
+              <StatusBar dark />
+              <div className="login-top">
+                <div className="login-logo" onClick={onLogoClick}>
+                  <TdShield size={72} />
+                </div>
+                <h1>Welcome back, Maria</h1>
+                <p className="login-sub">TD Sidekick · Personal Banking</p>
               </div>
-              <h1>TD Sidekick</h1>
-              <p className="login-sub">Banking that has your back</p>
-              <button className="btn-primary faceid-btn" onClick={startFaceId}>
-                <span className="faceid-glyph">◉</span> Sign in with Face ID
-              </button>
-              <p className="login-hint">Maria Chen · maria.chen</p>
+              <div className="login-bottom">
+                <button className="faceid-btn" onClick={startFaceId}>
+                  <FaceIdIcon /> Sign in with Face ID
+                </button>
+                <button className="login-alt">Use password instead</button>
+                <p className="login-hint">Protected by TD Fraud Shield</p>
+              </div>
             </div>
           )}
 
           {screen === 'scanning' && (
-            <div className="screen login-screen">
+            <div className="screen login-screen centered">
               <div className="faceid-scan">
                 <div className="faceid-ring" />
-                <span className="faceid-face">😐</span>
+                <FaceIdIcon />
               </div>
               <p className="scan-label">Scanning…</p>
             </div>
@@ -291,48 +356,72 @@ export default function Phone() {
           {screen === 'home' && (
             <div className={`screen home-screen ${exposed ? 'is-exposed' : ''}`}>
               <header className="app-header">
-                <div className="header-brand" onClick={onLogoClick}>
-                  <span className="logo-square">TD</span>
-                  <span className="header-name">Sidekick</span>
+                <StatusBar dark />
+                <div className="header-row">
+                  <div className="header-brand" onClick={onLogoClick}>
+                    <TdShield size={34} />
+                  </div>
+                  <div className="header-right">
+                    <RiskMeter score={risk} recentlyExposed={recentlyExposed && !exposed} />
+                    <button className="bell-btn" aria-label="Notifications">
+                      <BellIcon />
+                      <span className="bell-dot" />
+                    </button>
+                  </div>
                 </div>
-                <div className="header-right">
-                  {camOn && faceCount != null && (
-                    <span className="blindspot-chip">
-                      BlindSpot active · {faceCount} face{faceCount === 1 ? '' : 's'}
-                    </span>
-                  )}
-                  <RiskMeter score={risk} recentlyExposed={recentlyExposed && !exposed} />
-                </div>
+                <p className="greeting">Good morning, Maria</p>
               </header>
 
               <div className="home-body">
-                <p className="greeting">Good morning, Maria</p>
-
-                <div className="balance-card">
-                  <div className="balance-label">Everyday Chequing</div>
+                <section className="account-card">
+                  <div className="account-top">
+                    <span className="account-name">TD Every Day Chequing</span>
+                    <span className="account-num">4821</span>
+                  </div>
                   <div className="balance-amount sensitive">$8,432.19</div>
+                  <div className="account-sub">Available balance</div>
+                </section>
+
+                <section className="visa-card">
+                  <div className="visa-top">
+                    <TdShield size={26} />
+                    <span className="visa-brand">VISA</span>
+                  </div>
                   <div className="card-row">
                     <span className="card-chip" />
                     <span className="card-number sensitive">4520 1234 5678 4821</span>
                   </div>
                   <div className="card-meta">
                     <span>MARIA CHEN</span>
-                    <span>Card ending 4821 · 09/28</span>
+                    <span>09/28</span>
                   </div>
-                </div>
+                </section>
 
-                <button
-                  className="btn-primary send-money"
-                  onClick={() => showToast('Transfers are disabled in this demo')}
-                >
-                  Send Money
-                </button>
+                <section className="quick-actions">
+                  <button
+                    className="qa-btn"
+                    onClick={() => showToast('Transfers are disabled in this demo')}
+                  >
+                    <span className="qa-icon"><SendIcon /></span>
+                    Send Money
+                  </button>
+                  <button className="qa-btn" onClick={() => showToast('Demo only')}>
+                    <span className="qa-icon"><BillIcon /></span>
+                    Pay Bills
+                  </button>
+                  <button className="qa-btn" onClick={() => showToast('Demo only')}>
+                    <span className="qa-icon"><DepositIcon /></span>
+                    Deposit
+                  </button>
+                </section>
 
-                <div className="tx-section">
-                  <div className="tx-heading">Recent activity</div>
+                <section className="tx-section">
+                  <div className="tx-heading">
+                    <span>Recent activity</span>
+                    <button className="tx-viewall">View all</button>
+                  </div>
                   {TRANSACTIONS.map((tx) => (
                     <div className="tx-row" key={tx.id}>
-                      <span className="tx-icon">{tx.icon}</span>
                       <span className="tx-info">
                         <span className="tx-name">{tx.name}</span>
                         <span className="tx-date">{tx.date}</span>
@@ -342,22 +431,29 @@ export default function Phone() {
                       </span>
                     </div>
                   ))}
-                </div>
+                </section>
               </div>
+
+              <nav className="tab-bar">
+                <button className="tab active"><HomeIcon />Home</button>
+                <button className="tab"><AccountsIcon />Accounts</button>
+                <button className="tab"><MoveMoneyIcon />Move Money</button>
+                <button className="tab"><InsightsIcon />Insights</button>
+                <button className="tab"><MoreIcon />More</button>
+              </nav>
             </div>
           )}
 
           {screen === 'phish' && (
             <div className="screen phish-screen">
+              <StatusBar />
               <div className="phish-urlbar">
                 <span className="phish-lock">⚠︎</span>
                 <span className="phish-url">td-secure-verify.info</span>
               </div>
               {!phishVerifying ? (
                 <div className="phish-body">
-                  <div className="login-logo small">
-                    <span className="logo-square big">TD</span>
-                  </div>
+                  <div className="phish-shield"><TdShield size={56} /></div>
                   <h2>Verify your identity</h2>
                   <p className="phish-sub">
                     A charge of <b>$890.00</b> at LUXE-ELECTRONICS needs your review.
@@ -397,7 +493,10 @@ export default function Phone() {
 
           {/* blocked sign-in alert sheet */}
           <div className={`alert-sheet ${alertOpen ? 'show' : ''}`}>
-            <div className="alert-icon">⚠️</div>
+            <div className="alert-badge">
+              <TdShield size={40} />
+            </div>
+            <span className="alert-kicker">TD Fraud Shield</span>
             <h2>We blocked a sign-in from a device we don't recognize.</h2>
             <p className="alert-detail">
               Location: Unknown device, Chrome
@@ -437,6 +536,16 @@ export default function Phone() {
             </div>
           </div>
 
+          {/* BlindSpot live camera preview */}
+          <div className={`blindspot-preview ${camOn && camLive ? 'show' : ''}`}>
+            <video ref={videoRef} muted playsInline />
+            <span className="blindspot-chip">
+              {faceCount == null
+                ? 'BlindSpot active'
+                : `BlindSpot · ${faceCount} face${faceCount === 1 ? '' : 's'}`}
+            </span>
+          </div>
+
           {/* hidden demo panel */}
           {panelOpen && (
             <div className="demo-panel">
@@ -456,7 +565,6 @@ export default function Phone() {
           )}
 
           {toast && <div className="toast">{toast}</div>}
-          <video ref={videoRef} className="blindspot-video" muted playsInline />
         </div>
       </div>
     </div>

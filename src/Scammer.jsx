@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { send, subscribe } from './sync.js';
+import { TdShield } from './Icons.jsx';
 
 export default function Scammer() {
   // idle → accepted (checkmarks) → trap (spinner forever) → dead (lockdown)
@@ -45,15 +46,32 @@ export default function Scammer() {
   return (
     <div className="scammer-page">
       <header className="scammer-topbar">
-        <span className="logo-square">TD</span>
-        <span className="scammer-brand">TD Sidekick Online Banking</span>
-        <span className="scammer-topbar-right">EasyWeb · Personal</span>
+        <TdShield size={34} />
+        <span className="scammer-brand">TD Sidekick</span>
+        <nav className="scammer-nav">
+          <span>Personal</span>
+          <span>Small Business</span>
+          <span>Investing</span>
+        </nav>
+        <span className="scammer-topbar-right">EasyWeb Login</span>
       </header>
       <main className="scammer-main">
+        <div className="scammer-hero">
+          <h2>Bank securely, from anywhere</h2>
+          <p>
+            EasyWeb keeps you protected with multi-factor authentication and
+            24/7 fraud monitoring on every account.
+          </p>
+          <ul className="scammer-points">
+            <li>✓ 256-bit end-to-end encryption</li>
+            <li>✓ Two-step verification on new devices</li>
+            <li>✓ Real-time fraud alerts</li>
+          </ul>
+        </div>
         <div className="scammer-card">
-          <h1>Sign in</h1>
+          <h1>Login to EasyWeb</h1>
           <label className="field">
-            <span>Username</span>
+            <span>Username or Access Card</span>
             <div className="field-check-wrap">
               <input defaultValue="maria.chen" readOnly />
               {accepted && <span className="field-check">✓</span>}
@@ -73,6 +91,9 @@ export default function Scammer() {
               {accepted && <span className="field-check">✓</span>}
             </div>
           </label>
+          <label className="remember-row">
+            <input type="checkbox" defaultChecked readOnly /> Remember my username
+          </label>
           <button className="btn-primary scammer-signin" onClick={signIn} disabled={phase !== 'idle'}>
             {phase === 'idle' ? 'Sign In' : 'Signing in…'}
           </button>
@@ -83,8 +104,8 @@ export default function Scammer() {
               <span className="verify-small">Additional verification required</span>
             </div>
           )}
+          <p className="scammer-foot">Forgot password? · Security guarantee</p>
         </div>
-        <p className="scammer-foot">Bank-grade security · 256-bit encryption</p>
       </main>
     </div>
   );
