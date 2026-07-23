@@ -93,7 +93,7 @@
   }
   p { margin: 12px 0; }
   .lead { font-size: 18px; color: var(--muted); max-width: 60ch; }
-  section { padding: 78px 0; }
+  section { padding: 66px 0; }
   .tint { background: var(--card); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 
   /* ---------- hero ---------- */
@@ -167,10 +167,9 @@
 
   /* meta strip */
   .meta-strip {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 20px 28px;
+    display: flex; flex-wrap: wrap; gap: 20px 42px;
     margin-top: 46px; padding-top: 26px;
     border-top: 1px solid rgba(180, 230, 197, 0.18);
-    max-width: 480px;
   }
   .meta-strip .m { display: flex; flex-direction: column; }
   .meta-strip .m b { font-family: var(--font-mono); font-size: 20px; color: #eafaf0; font-weight: 700; }
@@ -178,11 +177,11 @@
 
   /* ---------- feature rows ---------- */
   .feature { display: grid; grid-template-columns: 1fr 1fr; gap: 52px; align-items: center; }
-  .feature + .feature { margin-top: 58px; }
+  .feature + .feature { margin-top: 40px; }
   .feature.flip .f-media { order: 2; }
   .f-media { display: flex; justify-content: center; }
   .f-media img { border-radius: 22px; box-shadow: var(--shadow); }
-  .f-media.phone img { width: 224px; border: 1px solid var(--line); }
+  .f-media.phone img { width: 194px; border: 1px solid var(--line); }
   .chip-sev {
     display: inline-flex; align-items: center; gap: 7px;
     font-family: var(--font-mono); font-size: 11px; font-weight: 600;
@@ -317,8 +316,7 @@
           traps the intruder, and turns the victim into the one holding the kill switch.
         </p>
         <div class="meta-strip">
-          <div class="m"><b>In the moment</b><span>not after the money's gone</span></div>
-          <div class="m"><b>On-device</b><span>nothing it sees leaves the phone</span></div>
+          <div class="m"><b>On-device</b><span>nothing leaves the phone</span></div>
           <div class="m"><b>One tap</b><span>victim → defender</span></div>
           <div class="m"><b>Four</b><span>layers of defense</span></div>
         </div>
