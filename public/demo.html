@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>TD Sidekick — Devpost</title>
+<title>TD Sidekick — Concept</title>
 <meta name="description" content="TD Sidekick: the bank that fights back. An anti-scam banking prototype." />
 <style>
   :root {
@@ -315,15 +315,11 @@
           Scam defense that lives inside the banking app — it spots the shoulder-surfer,
           traps the intruder, and turns the victim into the one holding the kill switch.
         </p>
-        <div class="hero-cta">
-          <a class="btn btn-primary" href="https://aelnimah.github.io/SideKick/" target="_blank" rel="noopener">Launch the live demo →</a>
-          <span class="url-chip">aelnimah.github.io/SideKick</span>
-        </div>
         <div class="meta-strip">
           <div class="m"><b>&lt; 1s</b><span>threat → locked down</span></div>
-          <div class="m"><b>2 Hz</b><span>on-device face scan</span></div>
-          <div class="m"><b>0</b><span>backend servers</span></div>
-          <div class="m"><b>5</b><span>defense surfaces</span></div>
+          <div class="m"><b>On-device</b><span>nothing leaves the phone</span></div>
+          <div class="m"><b>1 tap</b><span>victim → defender</span></div>
+          <div class="m"><b>4</b><span>layers of defense</span></div>
         </div>
       </div>
       <div class="hero-visual">
@@ -445,8 +441,8 @@
     <div class="kicker" style="color: var(--brand)">The attack, end to end</div>
     <h2>Watch a takeover fail in real time</h2>
     <p class="lead" style="margin-top: 14px;">
-      Two windows, synced live — the attacker's laptop on one side, the victim's phone on the other.
-      Here's the whole sequence the judges saw.
+      The attacker's laptop on one side, the victim's phone on the other — the whole takeover,
+      start to finish.
     </p>
     <div class="timeline">
       <div class="step has-shot">
@@ -495,99 +491,63 @@
 
 <section class="arch">
   <div class="wrap">
-    <div class="kicker">Under the hood</div>
-    <h2>Built to react in milliseconds, not round-trips</h2>
+    <div class="kicker">The idea in practice</div>
+    <h2>Protection that happens in the moment, not after the fact</h2>
     <p class="lead">
-      The whole thing is engineered to feel instant, which meant putting the intelligence on the
-      client and treating the two windows as one synchronized system.
+      Today's fraud defense arrives late — a text after the money's gone, a call centre the next
+      morning. Sidekick moves the whole response into the few seconds that actually decide it.
     </p>
     <div class="arch-grid">
       <div class="arch-card">
-        <div class="ac-tag">Real-time bus</div>
-        <h4>A live event fabric</h4>
-        <p>A typed message bus over the BroadcastChannel API keeps every surface in lockstep — exposures, risk updates, auth attempts, lockdowns — with a localStorage <code>storage</code>-event fallback so it degrades gracefully.</p>
+        <div class="ac-tag">Awareness</div>
+        <h4>It sees what you see</h4>
+        <p>The phone uses its own camera to notice when a screen is being watched. The instant a second face appears, the sensitive details vanish — and nothing it sees ever leaves the device.</p>
       </div>
       <div class="arch-card">
-        <div class="ac-tag">On-device ML</div>
-        <h4>Face detection in the browser</h4>
-        <p>BlindSpot streams the webcam through a TinyFaceDetector convolutional net running entirely client-side at 2 Hz. Face counts drive the exposure state machine — no frame ever leaves the device.</p>
+        <div class="ac-tag">Immediacy</div>
+        <h4>It acts in the same breath</h4>
+        <p>Defenses fire the moment a threat shows up — no waiting on a fraud queue or a stranger in a call centre to notice something's wrong first.</p>
       </div>
       <div class="arch-card">
-        <div class="ac-tag">Risk engine</div>
-        <h4>A scoring state machine</h4>
-        <p>A 0–100 model ingests weighted signals, clamps and decays over time, and maps to four severity bands. One source of truth drives the gauge, the blur layer, and every escalation.</p>
+        <div class="ac-tag">Clarity</div>
+        <h4>One honest signal</h4>
+        <p>Every risk rolls into a single score anyone can read at a glance, so the danger is never buried in fine print or lost in a notification you'll swipe away.</p>
       </div>
       <div class="arch-card">
-        <div class="ac-tag">Motion</div>
-        <h4>60fps, hand-tuned</h4>
-        <p>The speedometer needle, the sliding sheets and the lockdown checklist are pure CSS transforms on a spring easing — GPU-composited, reduced-motion aware, zero animation libraries.</p>
+        <div class="ac-tag">Control</div>
+        <h4>The switch is in your hand</h4>
+        <p>Containment that used to take a bank days — revoking sessions, cancelling payees, rotating credentials — happens in one tap, held by the person actually being targeted.</p>
       </div>
-      <div class="arch-card">
-        <div class="ac-tag">Architecture</div>
-        <h4>Zero-backend by design</h4>
-        <p>A React 18 + Vite single-page app with hash routing and no framework bloat. All state is client-side, which is exactly why the threat-to-lockdown path clocks in under a second.</p>
-      </div>
-      <div class="arch-card">
-        <div class="ac-tag">Delivery</div>
-        <h4>Ships itself</h4>
-        <p>Every push to <code>main</code> triggers a GitHub Actions pipeline that builds the static bundle and publishes to GitHub Pages — the live demo is always the latest commit.</p>
-      </div>
-    </div>
-    <div class="stack">
-      <span>React 18</span>
-      <span>Vite</span>
-      <span>BroadcastChannel API</span>
-      <span>face-api.js · TinyFaceDetector</span>
-      <span>MediaDevices / getUserMedia</span>
-      <span>CSS transforms &amp; keyframes</span>
-      <span>GitHub Actions → Pages</span>
     </div>
     <p class="arch-note">
-      // Engineering notes — challenges we actually hit
+      Everything shown here runs live — a working prototype, not a mockup.
     </p>
-    <div class="prose-2" style="margin-top: 8px;">
-      <div>
-        <p style="color: #b6d6c0;">
-          <b style="color:#eafaf0;">Two windows, one truth.</b> Getting an exposure on the phone and a
-          termination on the laptop to feel like a single event meant designing an idempotent message
-          protocol and a shared reducer, so no window could drift out of state.
-        </p>
-      </div>
-      <div>
-        <p style="color: #b6d6c0;">
-          <b style="color:#eafaf0;">ML that fails invisibly.</b> Cameras get denied, models fail to load,
-          lighting is bad. The detection loop is fully sandboxed — if it can't run, the app never
-          notices and every other defense keeps working.
-        </p>
-      </div>
-    </div>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <div class="kicker" style="color: var(--brand)">Accomplishments &amp; what's next</div>
-    <h2>A prototype that already tells the whole story</h2>
+    <div class="kicker" style="color: var(--brand)">Where it goes next</div>
+    <h2>From concept to something you'd actually carry</h2>
     <p class="lead" style="margin-top: 14px;">
-      In a hackathon window we shipped a working, deployable product with a real ML pipeline, a
-      live-synced attack simulation, and a defense narrative that lands in thirty seconds. Here's
-      where it goes from here.
+      The idea is proven end to end — the sensing, the alerting and the one-tap defense all work
+      together today. From here it grows into a defense that lives with you.
     </p>
     <div class="next-grid">
       <div class="next-card">
-        <div class="n-i">Signal</div>
-        <h4>Real device fingerprinting</h4>
-        <p>Swap the simulated “unrecognized device” for genuine device + geo + behavioral signals feeding the risk model.</p>
+        <div class="n-i">Awareness</div>
+        <h4>Learns your normal</h4>
+        <p>Recognizes what “you” looks like — your devices, places and habits — so it knows the moment something isn't you.</p>
       </div>
       <div class="next-card">
-        <div class="n-i">Sync</div>
-        <h4>Cross-device push</h4>
-        <p>Lift the real-time bus off a single machine and onto a lightweight relay so the alert reaches your actual phone.</p>
+        <div class="n-i">Reach</div>
+        <h4>Follows you anywhere</h4>
+        <p>The alert reaches your real phone wherever you are, not just the screen sitting in front of you.</p>
       </div>
       <div class="next-card">
         <div class="n-i">Intelligence</div>
-        <h4>Scam-pattern models</h4>
-        <p>Train on real fraud typologies — mule payees, coached transfers, OTP relay — to score intent, not just events.</p>
+        <h4>Reads the whole scam</h4>
+        <p>Learns the shape of a scam as it unfolds — coached transfers, relayed codes — to catch intent, not just isolated events.</p>
       </div>
     </div>
   </div>
