@@ -376,25 +376,19 @@ export default function Phone() {
                 <section className="account-card">
                   <div className="account-top">
                     <span className="account-name">TD Every Day Chequing</span>
-                    <span className="account-num">4821</span>
+                    <span className="account-num">•••• 7729</span>
                   </div>
                   <div className="balance-amount sensitive">$8,432.19</div>
                   <div className="account-sub">Available balance</div>
                 </section>
 
-                <section className="visa-card">
-                  <div className="visa-top">
-                    <TdShield size={26} />
-                    <span className="visa-brand">VISA</span>
+                <section className="account-card">
+                  <div className="account-top">
+                    <span className="account-name">TD Cash Back Visa</span>
+                    <span className="account-num">•••• 4821</span>
                   </div>
-                  <div className="card-row">
-                    <span className="card-chip" />
-                    <span className="card-number sensitive">4520 1234 5678 4821</span>
-                  </div>
-                  <div className="card-meta">
-                    <span>MARIA CHEN</span>
-                    <span>09/28</span>
-                  </div>
+                  <div className="balance-amount sensitive">$1,204.56</div>
+                  <div className="account-sub">Current balance · $6,795 available</div>
                 </section>
 
                 <section className="quick-actions">

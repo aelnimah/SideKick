@@ -447,6 +447,9 @@ button {
   font-size: 12px;
   color: var(--muted);
 }
+.account-card + .account-card {
+  margin-top: 12px;
+}
 
 .visa-card {
   margin-top: 12px;
